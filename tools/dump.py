@@ -1,3 +1,4 @@
+# NOTE: THESE SCRIPTS ARE WRITTEN WITH AI. they are not part of the functional code that affects the user. they are used by me alone. 
 import os
 import sys
 import glob
