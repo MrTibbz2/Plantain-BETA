@@ -4,6 +4,9 @@ import select # type: ignore
 
 DEBUGMODE = True
 
+def DPrint(msg: str):
+    if DEBUGMODE:
+        print(msg)
 
 def wait_for_mpremote():
     print("Waiting for mpremote... Press Ctrl+C to skip.")
