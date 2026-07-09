@@ -71,7 +71,7 @@ class MidiNote: # storage object for a singular midi note.
         return bytearray((status, self.note, self.velocity))
 
 
-class ButtonIndex:
+class ButtonIndex: # storage for the indexer, all the configurations of the mappings
     CONFIG_DIR = "/configs"
     CONFIG_EXT = ".pl_conf"
     DEFAULT_CONFIG = "default"
@@ -190,7 +190,7 @@ class ButtonIndex:
 
     
 
-class MIDI:
+class MIDI: # simple class for sending transmissions of midi data. 
     def __init__(self, ble: ble, buttonIndex: ButtonIndex):
         self.__ble = ble
         self.__ButtonIndex = buttonIndex

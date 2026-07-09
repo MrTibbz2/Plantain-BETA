@@ -1,9 +1,9 @@
 from lib.pl_bluetooth.pl_bluetooth import ble, ButtonIndex, MIDI
 import asyncio
 import time
-from lib.debug.debug import wait_for_mpremote, DEBUGMODE
+from lib.debug.debug import wait_for_mpremote, DEBUGMODE,DPrint
 from lib.switchbutton_sensor.button import switch
-from lib.switchbutton_sensor.port_handler import ButtonHandler
+from firmware.src.lib.switchbutton_sensor.switch_manager import SwitchMgr
 
 
 ble_device = ble()
@@ -13,13 +13,16 @@ button_index = ButtonIndex()
 # waits for serial conn and enter press before running actual application.
 if DEBUGMODE:
     wait_for_mpremote()
-    print("Debug mode enabled.")
+    DPrint("Debug mode enabled.")
+    DPrint("Running application...")
 
 
-print("Running application...")
 
-bh = ButtonHandler()
+
+bh = SwitchMgr()
 while True:
-    print("running...")
+
+
+    DPrint("running...")
     time.sleep(1)
 #asyncio.run(ble_device.run())

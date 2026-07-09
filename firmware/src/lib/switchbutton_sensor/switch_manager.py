@@ -1,6 +1,7 @@
 from .button import switch
-class ButtonHandler:
-    def __init__(self):
+from ..debug.debug import DPrint
+class SwitchMgr:
+    def __init__(self, cb_MidiQueueAdd):
         
         
         self.buttons = [
@@ -10,13 +11,14 @@ class ButtonHandler:
             (7, switch.create(7, self.switch_callback), 3)
         ] 
           # this is really not very organised but it works more stable than anything else...
-          # also not very readable (If you havent read any other parts of this code) 
+          # instantiates all of the switches usingf the factory method provided (callback validation)
         
     
     def switch_callback(self, pin: int):
         for button in self.buttons:
             if button[0] == pin:
-                print(f"Button of pin {button[0]}, aka button {button[2]} pressed.")
+                DPrint(f"Button of pin {button[0]}, aka button {button[2]} pressed.")
+                
                 
                 break
 
