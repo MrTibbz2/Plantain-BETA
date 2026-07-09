@@ -35,7 +35,7 @@ def find_micropython_port_native():
             
             # 2. Trigger raw REPL mode, send confirmation print string, drop back to friendly REPL
             # We pipe this sequence straight into the device path
-            cmd = f"echo -e '\r\x03\x03\x01print(\"PRJMD_ACK\")\r\n\x02' > {port}"
+            cmd = f"echo -e '\\r\\x03\\x03\\x01print(\\\"PRJMD_ACK\\\")\\r\\n\\x02' > {port}"
             os.system(cmd)
             
             # Give the ESP32 a brief window to process the serial string
@@ -44,6 +44,24 @@ def find_micropython_port_native():
         except Exception:
             continue
     return None
+
+def install_dependencies(port):
+    """Install MicroPython packages from mip_requirements.txt using mip."""
+    req_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '../firmware/mip_requirements.txt'))
+    
+    if not os.path.exists(req_file):
+        print(f"⚠️  No mip_requirements.txt found at {req_file}")
+        return
+    
+    print("Installing MicroPython dependencies via mip...")
+    with open(req_file, 'r') as f:
+        packages = [line.strip() for line in f if line.strip()]
+    
+    for package in packages:
+        print(f"  Installing {package}...")
+        cmd = f"mpremote connect {port} mip install {package}"
+        if os.system(cmd) != 0:
+            print(f"⚠️  Failed to install {package}")
 
 def upload_files(port):
     local_src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../firmware/src'))
@@ -54,7 +72,9 @@ def upload_files(port):
     cmd = f"mpremote connect {port} fs cp -r {local_src_dir}/* :"
     
     if os.system(cmd) == 0:
-        print(" Firmware copy complete! Soft-resetting device...")
+        print(" Firmware copy complete!")
+        install_dependencies(port)
+        print(" Soft-resetting device...")
         os.system(f"mpremote connect {port} soft-reset")
     else:
         print("\n❌ Error: Failed to copy files.")

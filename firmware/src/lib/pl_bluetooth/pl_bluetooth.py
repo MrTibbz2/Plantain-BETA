@@ -71,122 +71,121 @@ class MidiNote: # storage object for a singular midi note.
         return bytearray((status, self.note, self.velocity))
 
 
-class ButtonIndex: 
-    # class for storing, writing and editing configs for what buttons map to what midi notes.
-    # 
-    # example config for one note:
-    #     {
-    #         "button": 0,
-    #         "note": 60,
-    #         "velocity": 100,
-    #     }.
-    # buttons 0-3 are usable. 
-    
+class ButtonIndex:
     CONFIG_DIR = "/configs"
     CONFIG_EXT = ".pl_conf"
     DEFAULT_CONFIG = "default"
-    DEFAULT_NOTES = [60, 62, 64, 67]  # C, D, E, G
+    DEFAULT_NOTES = [60, 62, 64, 67]
 
     def __init__(self):
-        self.__current_button_to_note_index = [] # the config loaded currently.
-        if not os.path.exists(self.CONFIG_DIR):
-            os.makedirs(self.CONFIG_DIR)
+        self.__current_button_to_note_index = []
+
+        try:
+            os.stat(self.CONFIG_DIR)
+        except OSError:
+            os.mkdir(self.CONFIG_DIR)
+
         self.__ensure_default_config()
-    
-    def __ensure_default_config(self):
-        """Ensure default config exists, create if missing."""
-        default_path = os.path.join(self.CONFIG_DIR, f"{self.DEFAULT_CONFIG}{self.CONFIG_EXT}")
-        if not os.path.exists(default_path):
-            try:
-                default_config = [
-                    {"button": i, "note": self.DEFAULT_NOTES[i], "velocity": 100}
-                    for i in range(4)
-                ]
-                with open(default_path, "w") as f:
-                    json.dump(default_config, f)
-                DPrint("Default config created")
-            except Exception as e:
-                DPrint(f"Error creating default config: {e}")
-    
-    def __validate_config_path(self, filename: str) -> str:
-        """Validate filename and return safe full path. Prevents path injection."""
+        self.load_config(self.DEFAULT_CONFIG)
+
+    def __ensure_default_config(self): # makes sure there is a default config. to make sure theres a fallback. 
+        default_path = self.CONFIG_DIR + "/" + self.DEFAULT_CONFIG + self.CONFIG_EXT
+
+        try:
+            os.stat(default_path)
+            return
+        except OSError:
+            pass
+
+        try:
+            default_config = [
+                {"button": i, "note": self.DEFAULT_NOTES[i], "velocity": 100}
+                for i in range(4)
+            ]
+
+            with open(default_path, "w") as f:
+                json.dump(default_config, f)
+
+            DPrint("Default config created")
+
+        except Exception as e:
+            DPrint(f"Error creating default config: {e}")
+
+    def __validate_config_path(self, filename: str) -> str: # checks the config path for path escapement/injection 
         if not filename.endswith(self.CONFIG_EXT):
             filename += self.CONFIG_EXT
-        
-        # Remove any path separators to prevent directory traversal.
-        # this is used to ensure the device is not affected by stupid user input. 
-        filename = filename.replace("/", "").replace("\\", "")
-        
+
+        if "/" in filename or "\\" in filename:
+            raise ValueError("Invalid filename")
 
         if filename == f"{self.DEFAULT_CONFIG}{self.CONFIG_EXT}":
             raise ValueError("Cannot modify default config")
-        
-        full_path = os.path.join(self.CONFIG_DIR, filename)
-        
-        # Verify resolved path is within CONFIG_DIR
-        resolved = os.path.normpath(full_path)
-        config_dir_resolved = os.path.normpath(self.CONFIG_DIR)
-        
-        if not resolved.startswith(config_dir_resolved):
-            raise ValueError(f"Invalid config path: {filename}")
-        
-        return full_path
 
-    def load_config(self, filename: str) -> bool:
+        return self.CONFIG_DIR + "/" + filename
+
+    def load_config(self, filename: str) -> bool: # loads the.. config???? 
         try:
-            path = self.__validate_config_path(filename)
+            if not filename.endswith(self.CONFIG_EXT):
+                filename += self.CONFIG_EXT
+
+            path = self.CONFIG_DIR + "/" + filename
+
             with open(path, "r") as f:
                 self.__current_button_to_note_index = json.load(f)
+
             return True
-        except ValueError as e:
-            DPrint(f"Invalid config path: {e}")
-            return False
+
         except FileNotFoundError:
             DPrint(f"Config file not found: {filename}")
             return False
-        except json.JSONDecodeError:
-            DPrint(f"Invalid JSON in config: {filename}")
-            return False
+
         except Exception as e:
             DPrint(f"Error loading config: {e}")
             return False
-    
-    def save_config(self, filename: str) -> bool:
+
+    def save_config(self, filename: str) -> bool: # shoves the config into filesystem. 
         try:
             path = self.__validate_config_path(filename)
+
             with open(path, "w") as f:
                 json.dump(self.__current_button_to_note_index, f)
+
             return True
+
         except ValueError as e:
             DPrint(f"Invalid config path: {e}")
             return False
+
         except Exception as e:
             DPrint(f"Error saving config: {e}")
             return False
-    
+
     def delete_config(self, filename: str) -> bool:
         try:
             path = self.__validate_config_path(filename)
             os.remove(path)
             return True
+
         except ValueError as e:
             DPrint(f"Invalid config path: {e}")
             return False
+
         except FileNotFoundError:
             DPrint(f"Config file not found: {filename}")
             return False
+
         except Exception as e:
             DPrint(f"Error deleting config: {e}")
             return False
-    
+
     def button_to_note(self, button_number: int, state=1):
         for item in self.__current_button_to_note_index:
             if item["button"] == button_number:
                 return MidiNote(
-                    note=item["note"], 
-                    velocity=item.get("velocity", 100), 
-                    state=state
-                    )
+                    note=item["note"],
+                    velocity=item.get("velocity", 100),
+                    state=state,
+                )
         return None
 
     
