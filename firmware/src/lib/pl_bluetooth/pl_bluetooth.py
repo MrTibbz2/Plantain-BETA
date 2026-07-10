@@ -6,7 +6,7 @@ import json
 import io # type: ignore
 import os
 from ..debug.debug import DPrint
-
+import time
 
 class ble: # class for setting up and using bluetooth midi. 
     def __init__(self):
@@ -51,8 +51,9 @@ class ble: # class for setting up and using bluetooth midi.
                 DPrint(f"device disconnected.")
 
 
-    def __transmit(self, data: bytes):
+    def _transmit(self, data: bytes):
         if self.__connection and self.__connection.is_connected():
+            DPrint(f"BLE: sennding data: {data}")
             self.__midi_char.notify(self.__connection, data)
 
 
@@ -64,11 +65,13 @@ class MidiNote: # storage object for a singular midi note.
         self.state = state  # 0 = off, 1 = on
 
     def dump(self):
-        # returns the bytes that a midi interpreter will accept over BLE. 
-
+        # BLE MIDI spec requires 5 bytes: timestamp, header, status, note and velocity. 
+        
+        ts = time.ticks_ms() & 0x1FFF
+        header = 0x80 | ((ts >> 7) & 0x3F)
+        timestamp = 0x80 | (ts & 0x7F)
         status = 0x90 | (self.channel & 0x0F) if self.state else 0x80 | (self.channel & 0x0F)
-
-        return bytearray((status, self.note, self.velocity))
+        return bytearray((header, timestamp, status, self.note, self.velocity))
 
 
 class ButtonIndex: # storage for the indexer, all the configurations of the mappings
@@ -198,8 +201,13 @@ class MIDI: # simple class for sending transmissions of midi data.
     def note_on(self, button_number: int):
         note = self.__ButtonIndex.button_to_note(button_number, state=1)
         if note:
-            self.__ble.__transmit(note.dump())
+            
+            self.__ble._transmit(note.dump())
     def note_off(self, button_number: int):
         note = self.__ButtonIndex.button_to_note(button_number, state=0)
         if note:
-            self.__ble.__transmit(note.dump())
+            self.__ble._transmit(note.dump())
+    def bee(self):
+        DPrint("bzzz")
+
+
