@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plantain MIDI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantain MIDI Controller</title>
     <style>
         * {
             margin: 0;
@@ -11,77 +11,144 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         html, body {
-            width: 100%;
             height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            touch-action: manipulation;
-            transition: background 0.3s, color 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        body.theme-purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-        }
-
-        body.theme-light {
-            background: #f0f2f5;
-            color: #333;
-        }
-
-        body.theme-dark {
-            background: #1a1a1a;
-            color: #e0e0e0;
-        }
-
-        body.theme-ocean {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-            color: #fff;
-        }
-
-        body.theme-sunset {
-            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #ee5a6f 100%);
-            color: #fff;
-        }
-
-        body.theme-trump {
-            background: linear-gradient(135deg, #b8860b 0%, #ffd700 30%, #ff4500 70%, #8b0000 100%);
-            color: #fff;
-            position: relative;
-        }
-
-        .container {
-            height: 100vh;
+        body {
             display: flex;
             flex-direction: column;
-            padding: clamp(12px, 3vw, 20px);
-            gap: clamp(12px, 2vh, 16px);
+            overflow: hidden;
+        }
+
+        /* Dark Theme */
+        body.theme-dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #475569;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --button-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Light Theme */
+        body.theme-light {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #cbd5e1;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #059669;
+            --warning: #d97706;
+            --error: #dc2626;
+            --button-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Slate Professional Theme */
+        body.theme-slate {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --text-primary: #f7fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #4a5568;
+            --accent: #4299e1;
+            --accent-hover: #3182ce;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --error: #f56565;
+            --button-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* High Contrast Accessible Theme */
+        body.theme-accessible {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --border-color: #ffffff;
+            --accent: #ffff00;
+            --accent-hover: #cccc00;
+            --success: #00ff00;
+            --warning: #ff8800;
+            --error: #ff0000;
+            --button-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        body.theme-accessible * {
+            border-width: 2px !important;
+        }
+
+        /* Minimal Zen Theme */
+        body.theme-zen {
+            --bg-primary: #fafaf8;
+            --bg-secondary: #f5f5f3;
+            --bg-tertiary: #efefeb;
+            --text-primary: #2c2c2c;
+            --text-secondary: #5a5a5a;
+            --border-color: #d4d4d0;
+            --accent: #6b5b95;
+            --accent-hover: #5a4a84;
+            --success: #6b8e23;
+            --warning: #cd853f;
+            --error: #a0522d;
+            --button-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color var(--transition), color var(--transition);
         }
 
         header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-md) var(--spacing-lg);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: var(--spacing-lg);
             flex-shrink: 0;
-            gap: 12px;
-        }
-
-        h1 {
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            font-weight: 600;
-        }
-
-        .theme-trump h1 {
-            font-family: 'Impact', 'Arial Black', sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            letter-spacing: 1px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--spacing-md);
+            min-width: 0;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            white-space: nowrap;
         }
 
         .theme-switcher {
@@ -89,471 +156,383 @@
         }
 
         .theme-button {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            transition: all 0.2s;
+            transition: all var(--transition);
+            box-shadow: var(--button-shadow);
         }
 
         .theme-button:hover {
-            background: rgba(255,255,255,0.3);
-            transform: rotate(180deg);
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
         }
 
         .theme-button:focus {
-            outline: 3px solid #ffd700;
+            outline: 2px solid var(--accent);
             outline-offset: 2px;
         }
 
         .theme-menu {
             position: absolute;
-            top: 45px;
+            top: 100%;
             left: 0;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 8px;
+            margin-top: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             display: none;
             flex-direction: column;
-            gap: 4px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
             z-index: 100;
-            min-width: 140px;
+            min-width: 160px;
+            animation: slideDown 0.2s ease-out;
         }
 
         .theme-menu.show {
             display: flex;
         }
 
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .theme-option {
-            padding: 10px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #333;
-            font-size: 0.9rem;
-            transition: background 0.2s;
+            background: none;
             border: none;
-            background: transparent;
+            color: var(--text-primary);
+            padding: var(--spacing-md);
             text-align: left;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--spacing-md);
+            transition: all var(--transition);
+            font-size: 0.95rem;
         }
 
         .theme-option:hover {
-            background: rgba(0,0,0,0.1);
+            background: var(--bg-tertiary);
         }
 
         .theme-option.active {
-            background: rgba(102,126,234,0.2);
+            background: var(--accent);
+            color: white;
             font-weight: 600;
         }
 
         .theme-icon {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .theme-icon.purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .theme-icon.light {
-            background: #f0f2f5;
-            border: 2px solid #ddd;
-        }
-
-        .theme-icon.dark {
-            background: #1a1a1a;
-            border: 2px solid #333;
-        }
-
-        .theme-icon.ocean {
-            background: linear-gradient(135deg, #1e3c72 0%, #7e22ce 100%);
-        }
-
-        .theme-icon.sunset {
-            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
-        }
-
-        .theme-icon.trump {
-            background: linear-gradient(135deg, #ffd700 0%, #ff4500 100%);
-        }
-
         .status-bar {
             display: flex;
-            gap: clamp(8px, 2vw, 16px);
-            font-size: clamp(0.75rem, 2vw, 0.9rem);
+            gap: var(--spacing-lg);
+            align-items: center;
         }
 
         .status-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: var(--spacing-sm);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            transition: background 0.3s;
+            background: var(--bg-tertiary);
+            animation: pulse 2s infinite;
         }
 
         .status-dot.active {
-            background: #4caf50;
-            box-shadow: 0 0 8px #4caf50;
+            background: var(--success);
+            animation: pulse 1s infinite;
         }
 
         .status-dot.warning {
-            background: #ff9800;
-            box-shadow: 0 0 8px #ff9800;
+            background: var(--warning);
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
         }
 
         main {
+            display: flex;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .sidebar {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: clamp(10px, 2vh, 16px);
-            min-height: 0;
+            gap: var(--spacing-lg);
+            overflow-y: auto;
+            min-width: 0;
         }
 
         .card {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: clamp(12px, 3vw, 20px);
-            color: #333;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        .theme-light .card {
-            background: #ffffff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .theme-dark .card {
-            background: rgba(40,40,40,0.95);
-            color: #e0e0e0;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-
-        .theme-trump .card {
-            background: rgba(255,255,255,0.98);
-            border: 3px solid #ffd700;
-            box-shadow: 0 8px 32px rgba(255,215,0,0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .theme-trump .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 1;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .theme-trump .card:first-of-type::before {
-            background-image: url('trump-photos/1Uwwtr-gTEC4S-KY2IGqbg.webp');
-            background-position: right center;
-            background-size: 180px;
-        }
-
-        .theme-trump .mappings-card::before {
-            background-image: url('trump-photos/american eagle.jpg');
-            background-position: center;
-            background-size: 200px;
-        }
-
-        .theme-trump .card > * {
-            position: relative;
-            z-index: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .card h2 {
-            font-size: clamp(1rem, 3vw, 1.25rem);
-            margin-bottom: clamp(10px, 2vh, 16px);
-            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
         }
 
-        .theme-light .card h2 {
-            color: #2196f3;
+        .active-config-display {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent);
         }
 
-        .theme-dark .card h2 {
-            color: #bb86fc;
+        .active-config-label {
+            margin-bottom: var(--spacing-xs);
+            opacity: 0.8;
         }
 
-        .theme-ocean .card h2 {
-            color: #7e22ce;
-        }
-
-        .theme-sunset .card h2 {
-            color: #ff4500;
-        }
-
-        .theme-trump .card h2 {
-            color: #ff4500;
-            font-family: 'Impact', 'Arial Black', sans-serif;
-            text-transform: uppercase;
-        }
-
-        .config-header {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: clamp(8px, 1.5vh, 12px);
-        }
-
-        select {
-            flex: 1;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-            padding: clamp(8px, 2vw, 12px);
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: white;
-            color: #333;
-        }
-
-        .theme-dark select {
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border-color: #444;
-        }
-
-        .theme-trump select {
-            border: 2px solid #ffd700;
+        .active-config-value {
             font-weight: 600;
+            color: var(--accent);
+            word-break: break-word;
         }
 
-        .btn-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-            gap: 8px;
-        }
-
-        button {
-            font-size: clamp(0.85rem, 2vw, 0.95rem);
-            padding: clamp(8px, 2vw, 12px);
-            border: none;
-            border-radius: 8px;
-            background: #667eea;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            touch-action: manipulation;
-        }
-
-        .theme-light button {
-            background: #2196f3;
-        }
-
-        .theme-dark button {
-            background: #bb86fc;
-        }
-
-        .theme-ocean button {
-            background: #7e22ce;
-        }
-
-        .theme-sunset button {
-            background: #ff6b6b;
-        }
-
-        .theme-trump button {
-            background: linear-gradient(135deg, #ffd700 0%, #ff4500 100%);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border: 2px solid #b8860b;
-        }
-
-        button:focus {
-            outline: 3px solid #ffd700;
-            outline-offset: 2px;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        button.danger {
-            background: #f44336;
-        }
-
-        .theme-trump button.danger {
-            background: linear-gradient(135deg, #ff0000 0%, #8b0000 100%);
-        }
-
-        .mappings-card {
-            flex: 1;
-            min-height: 0;
+        .config-panel {
             display: flex;
             flex-direction: column;
-        }
-
-        .button-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: clamp(8px, 1.5vh, 12px);
+            gap: var(--spacing-md);
+            max-height: 400px;
             overflow-y: auto;
         }
 
-        .button-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            padding: clamp(12px, 2.5vw, 16px);
+        .config-item {
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .config-item:hover {
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+
+        .config-item.active {
+            border-color: var(--accent);
+            background: var(--accent);
             color: white;
+            font-weight: 600;
+        }
+
+        .config-item.loaded {
+            border-left: 4px solid var(--success);
+        }
+
+        .config-actions {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
         }
 
-        .theme-light .button-card {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            color: #1565c0;
-            border: 2px solid #90caf9;
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all var(--transition);
+            box-shadow: var(--button-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
         }
 
-        .theme-dark .button-card {
-            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-            color: #e0e0e0;
-            border: 2px solid #555;
+        .btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            transform: translateY(-1px);
         }
 
-        .theme-ocean .button-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        .btn:active {
+            transform: translateY(0);
         }
 
-        .theme-sunset .button-card {
-            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+        .btn:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
-        .theme-trump .button-card {
-            background: linear-gradient(135deg, #ffd700 0%, #ff4500 100%);
-            border: 3px solid #b8860b;
-            box-shadow: 0 4px 12px rgba(255,215,0,0.4);
-            position: relative;
-            overflow: hidden;
+        .btn.primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
         }
 
-        .theme-trump .button-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 1;
-            pointer-events: none;
-            z-index: 0;
+        .btn.primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
         }
 
-        .theme-trump .button-card:nth-child(1)::before {
-            background-image: url('trump-photos/71I1Jhy8wCL._AC_UF894,1000_QL80_.jpg');
+        .btn.danger {
+            color: var(--error);
         }
 
-        .theme-trump .button-card:nth-child(2)::before {
-            background-image: url('trump-photos/mustang.avif');
+        .btn.danger:hover {
+            background: var(--error);
+            color: white;
+            border-color: var(--error);
         }
 
-        .theme-trump .button-card:nth-child(3)::before {
-            background-image: url('trump-photos/images.jpg');
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .theme-trump .button-card:nth-child(4)::before {
-            background-image: url('trump-photos/images (1).jpg');
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
         }
 
-        .theme-trump .button-card > * {
-            position: relative;
-            z-index: 1;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        .dashboard-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
         }
 
-        .theme-trump .button-card input {
-            text-shadow: none;
+        .dashboard-item-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .dashboard-item-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .button-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
         }
 
         .button-card h3 {
-            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-            margin-bottom: 4px;
+            font-size: 0.95rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
         }
 
         .note-display {
-            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-size: 1.8rem;
             font-weight: 700;
+            color: var(--accent);
             text-align: center;
-            padding: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .theme-light .note-display {
-            background: rgba(0,0,0,0.1);
-        }
-
-        .theme-dark .note-display {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .theme-trump .note-display {
-            background: rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,215,0,0.5);
+            margin-bottom: var(--spacing-md);
+            font-family: 'Courier New', monospace;
         }
 
         .button-card label {
-            font-size: clamp(0.75rem, 2vw, 0.85rem);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
         }
 
         .button-card input {
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            padding: 6px;
-            border: none;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.9);
-            color: #333;
+            width: 100%;
+            padding: var(--spacing-sm);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-md);
+            transition: border-color var(--transition);
         }
 
-        .theme-light .button-card input {
-            background: white;
-            border: 2px solid #90caf9;
-        }
-
-        .theme-dark .button-card input {
-            background: #1a1a1a;
-            color: #e0e0e0;
-            border: 2px solid #555;
-        }
-
-        .theme-trump .button-card input {
-            border: 2px solid #b8860b;
-            font-weight: 600;
+        .button-card input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .modal {
@@ -563,12 +542,18 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: var(--spacing-md);
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal.show {
@@ -576,46 +561,62 @@
         }
 
         .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: clamp(20px, 4vw, 32px);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
             max-width: 400px;
             width: 100%;
-            color: #333;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            color: var(--text-primary);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-content h3 {
-            font-size: clamp(1.1rem, 3vw, 1.4rem);
-            margin-bottom: 16px;
-            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--accent);
         }
 
         .modal-content label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: var(--spacing-sm);
             font-weight: 500;
+            font-size: 0.95rem;
         }
 
         .modal-content input {
             width: 100%;
             font-size: 1rem;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            color: #333;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            transition: border-color var(--transition);
         }
 
-        .theme-dark .modal-content input {
-            background: #2a2a2a;
-            border-color: #444;
-            color: #e0e0e0;
+        .modal-content input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .modal-buttons {
             display: flex;
-            gap: 12px;
+            gap: var(--spacing-md);
         }
 
         .modal-buttons button {
@@ -624,17 +625,19 @@
 
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: var(--spacing-lg);
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
+            transform: translateX(-50%) translateY(120px);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-md);
             font-size: 0.9rem;
             opacity: 0;
-            transition: all 0.3s;
+            transition: all var(--transition);
             z-index: 2000;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         }
 
         .toast.show {
@@ -643,142 +646,171 @@
         }
 
         .toast.success {
-            background: #4caf50;
+            border-color: var(--success);
+            background: var(--bg-secondary);
         }
 
         .toast.error {
-            background: #f44336;
+            border-color: var(--error);
+            background: var(--bg-secondary);
         }
 
-        @media (max-width: 600px) {
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+            }
+
             .button-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        @media (max-width: 640px) {
+            header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .header-left {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            .status-bar {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            main {
+                padding: var(--spacing-md);
+                gap: var(--spacing-md);
+            }
+
+            .sidebar {
+                max-height: 150px;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: var(--spacing-md);
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <div class="header-left">
-                <div class="theme-switcher">
-                    <button class="theme-button" id="theme-button" aria-label="Change theme">🎨</button>
-                    <div class="theme-menu" id="theme-menu">
-                        <button class="theme-option" data-theme="purple">
-                            <span class="theme-icon purple"></span>
-                            Purple
-                        </button>
-                        <button class="theme-option" data-theme="light">
-                            <span class="theme-icon light"></span>
-                            Light
-                        </button>
-                        <button class="theme-option" data-theme="dark">
-                            <span class="theme-icon dark"></span>
-                            Dark
-                        </button>
-                        <button class="theme-option" data-theme="ocean">
-                            <span class="theme-icon ocean"></span>
-                            Ocean
-                        </button>
-                        <button class="theme-option" data-theme="sunset">
-                            <span class="theme-icon sunset"></span>
-                            Sunset
-                        </button>
-                        <button class="theme-option" data-theme="trump">
-                            <span class="theme-icon trump"></span>
-                            Trump
-                        </button>
+<body class="theme-dark">
+    <header>
+        <div class="header-left">
+            <div class="theme-switcher">
+                <button class="theme-button" id="theme-button" aria-label="Change theme">🎨</button>
+                <div class="theme-menu" id="theme-menu">
+                    <button class="theme-option active" data-theme="dark" aria-label="Dark theme">
+                        <span class="theme-icon" style="background: #1e293b;"></span>
+                        Dark
+                    </button>
+                    <button class="theme-option" data-theme="light" aria-label="Light theme">
+                        <span class="theme-icon" style="background: #f8fafc;"></span>
+                        Light
+                    </button>
+                    <button class="theme-option" data-theme="slate" aria-label="Slate professional theme">
+                        <span class="theme-icon" style="background: #4a5568;"></span>
+                        Slate
+                    </button>
+                    <button class="theme-option" data-theme="zen" aria-label="Zen minimal theme">
+                        <span class="theme-icon" style="background: #f5f5f3;"></span>
+                        Zen
+                    </button>
+                    <button class="theme-option" data-theme="accessible" aria-label="High contrast accessible theme">
+                        <span class="theme-icon" style="background: #ffff00;"></span>
+                        Accessible
+                    </button>
+                </div>
+            </div>
+            <h1>Plantain MIDI</h1>
+        </div>
+        <div class="status-bar" role="status" aria-live="polite" aria-atomic="true">
+            <div class="status-item">
+                <span class="status-dot" id="wifi-status" aria-hidden="true"></span>
+                <span id="wifi-text" class="sr-only">WiFi: Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="ble-status" aria-hidden="true"></span>
+                <span id="ble-text" class="sr-only">Bluetooth: Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="temp-status" aria-hidden="true"></span>
+                <span id="temp-text" class="sr-only">Temp: --°C</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <aside class="sidebar">
+            <div class="card">
+                <h2>Configurations</h2>
+                <div class="active-config-display">
+                    <div class="active-config-label">Active:</div>
+                    <div class="active-config-value" id="active-config-display">None</div>
+                </div>
+                <div class="config-panel" id="config-panel" role="listbox" aria-label="Available configurations">
+                </div>
+                <div class="config-actions">
+                    <button class="btn primary" id="new-config-btn" aria-label="Create new configuration">+ New</button>
+                    <button class="btn" id="edit-config-btn" aria-label="Edit selected configuration" disabled>Edit</button>
+                    <button class="btn danger" id="delete-config-btn" aria-label="Delete selected configuration" disabled>Delete</button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="content">
+            <div class="card">
+                <h2>Status Dashboard</h2>
+                <div class="dashboard" id="dashboard">
+                    <div class="dashboard-item">
+                        <div class="dashboard-item-label">WiFi</div>
+                        <div class="dashboard-item-value" id="dashboard-wifi">—</div>
+                    </div>
+                    <div class="dashboard-item">
+                        <div class="dashboard-item-label">Bluetooth</div>
+                        <div class="dashboard-item-value" id="dashboard-ble">—</div>
+                    </div>
+                    <div class="dashboard-item">
+                        <div class="dashboard-item-label">Temperature</div>
+                        <div class="dashboard-item-value" id="dashboard-temp">—</div>
                     </div>
                 </div>
-                <h1>Plantain MIDI</h1>
-            </div>
-            <div class="status-bar" role="status" aria-live="polite">
-                <div class="status-item">
-                    <span class="status-dot" id="wifi-status" aria-hidden="true"></span>
-                    <span id="wifi-text" class="sr-only">WiFi: Disconnected</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-dot" id="bluetooth-status" aria-hidden="true"></span>
-                    <span id="bluetooth-text" class="sr-only">Bluetooth: Disconnected</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-dot" id="temp-status" aria-hidden="true"></span>
-                    <span id="temp-text" class="sr-only">Temp: --°C</span>
-                </div>
-            </div>
-        </header>
-
-        <main>
-            <div class="card">
-                <h2>Configuration</h2>
-                <div class="config-header">
-                    <select id="config-select" aria-label="Select configuration">
-                        <option value="">Loading...</option>
-                    </select>
-                </div>
-                <div class="btn-group">
-                    <button id="load-btn">Load</button>
-                    <button id="save-btn">Save</button>
-                    <button id="new-btn">New</button>
-                    <button id="delete-btn" class="danger">Delete</button>
-                </div>
             </div>
 
-            <div class="card mappings-card">
+            <div class="card hidden" id="mappings-card">
                 <h2>Button Mappings</h2>
                 <div class="button-grid" id="button-grid">
-                    <div class="button-card">
-                        <h3>Button 0</h3>
-                        <div class="note-display" id="note-display-0">C4</div>
-                        <label>
-                            Note
-                            <input type="number" data-button="0" data-field="note" min="0" max="127" value="60">
-                        </label>
-                        <label>
-                            Velocity
-                            <input type="number" data-button="0" data-field="velocity" min="0" max="127" value="100">
-                        </label>
-                    </div>
-                    <div class="button-card">
-                        <h3>Button 1</h3>
-                        <div class="note-display" id="note-display-1">D4</div>
-                        <label>
-                            Note
-                            <input type="number" data-button="1" data-field="note" min="0" max="127" value="62">
-                        </label>
-                        <label>
-                            Velocity
-                            <input type="number" data-button="1" data-field="velocity" min="0" max="127" value="100">
-                        </label>
-                    </div>
-                    <div class="button-card">
-                        <h3>Button 2</h3>
-                        <div class="note-display" id="note-display-2">E4</div>
-                        <label>
-                            Note
-                            <input type="number" data-button="2" data-field="note" min="0" max="127" value="64">
-                        </label>
-                        <label>
-                            Velocity
-                            <input type="number" data-button="2" data-field="velocity" min="0" max="127" value="100">
-                        </label>
-                    </div>
-                    <div class="button-card">
-                        <h3>Button 3</h3>
-                        <div class="note-display" id="note-display-3">G4</div>
-                        <label>
-                            Note
-                            <input type="number" data-button="3" data-field="note" min="0" max="127" value="67">
-                        </label>
-                        <label>
-                            Velocity
-                            <input type="number" data-button="3" data-field="velocity" min="0" max="127" value="100">
-                        </label>
-                    </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
     <div class="modal" id="modal">
         <div class="modal-content">
@@ -786,13 +818,13 @@
             <label for="modal-input" id="modal-label">Config Name</label>
             <input type="text" id="modal-input" autocomplete="off">
             <div class="modal-buttons">
-                <button id="modal-cancel">Cancel</button>
-                <button id="modal-confirm">Confirm</button>
+                <button class="btn" id="modal-cancel">Cancel</button>
+                <button class="btn primary" id="modal-confirm">Confirm</button>
             </div>
         </div>
     </div>
 
-    <div class="toast" id="toast" role="alert"></div>
+    <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
     <script src="script.js"></script>
 </body>

@@ -1,14 +1,12 @@
 const state = {
-    currentConfig: null,
     configs: [],
+    selectedConfig: null,
+    loadedConfig: null,
     mappings: [],
-    modalResolve: null,
     currentTheme: 'dark'
 };
 
-const MIDI_NOTES = [
-    'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
-];
+const MIDI_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 function midiToNoteName(midiNumber) {
     const octave = Math.floor(midiNumber / 12) - 1;
@@ -16,67 +14,79 @@ function midiToNoteName(midiNumber) {
     return `${note}${octave}`;
 }
 
-function noteNameToMidi(noteName) {
-    const match = noteName.match(/^([A-G]#?)(-?\d+)$/);
-    if (!match) return 60;
-    
-    const note = match[1];
-    const octave = parseInt(match[2]);
-    const noteIndex = MIDI_NOTES.indexOf(note);
-    
-    if (noteIndex === -1) return 60;
-    return (octave + 1) * 12 + noteIndex;
-}
-
 const API = {
     async getConfigs() {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve(['default.pl_conf', 'piano.pl_conf', 'drums.pl_conf']);
-            }, 300);
-        });
+        try {
+            const res = await fetch('/api/configs');
+            if (!res.ok) throw new Error('Failed to fetch configs');
+            return await res.json();
+        } catch (e) {
+            console.error('getConfigs error:', e);
+            return [];
+        }
     },
 
-    async loadConfig(filename) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const mappings = [
-                    { button: 0, note: 60, velocity: 100 },
-                    { button: 1, note: 62, velocity: 100 },
-                    { button: 2, note: 64, velocity: 100 },
-                    { button: 3, note: 67, velocity: 100 }
-                ];
-                resolve({ success: true, mappings });
-            }, 300);
-        });
+    async selectConfig(name) {
+        try {
+            const res = await fetch(`/api/select/${name}`, { method: 'POST' });
+            if (!res.ok) throw new Error('Failed to select config');
+            return await res.json();
+        } catch (e) {
+            console.error('selectConfig error:', e);
+            return { ok: false };
+        }
+    },
+
+    async loadConfig(name) {
+        try {
+            const res = await fetch(`/api/load/${name}`);
+            if (!res.ok) throw new Error('Config not found');
+            return await res.json();
+        } catch (e) {
+            console.error('loadConfig error:', e);
+            return null;
+        }
     },
 
     async saveConfig(filename, mappings) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({ success: true });
-            }, 300);
-        });
+        try {
+            const res = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, mappings })
+            });
+            if (!res.ok) throw new Error('Failed to save config');
+            return await res.json();
+        } catch (e) {
+            console.error('saveConfig error:', e);
+            return { ok: false };
+        }
     },
 
-    async deleteConfig(filename) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({ success: true });
-            }, 300);
-        });
+    async deleteConfig(name) {
+        try {
+            const res = await fetch(`/api/config/${name}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete config');
+            return await res.json();
+        } catch (e) {
+            console.error('deleteConfig error:', e);
+            return { ok: false };
+        }
     },
 
     async getStatus() {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({
-                    wifi: { connected: true, ssid: 'HomeNet' },
-                    bluetooth: { connected: false, advertising: true },
-                    temperature: 42
-                });
-            }, 200);
-        });
+        try {
+            const res = await fetch('/api/status');
+            if (!res.ok) throw new Error('Failed to fetch status');
+            return await res.json();
+        } catch (e) {
+            console.error('getStatus error:', e);
+            return {
+                wifi: { connected: false },
+                bluetooth: { connected: false, advertising: false },
+                temperature: null
+            };
+        }
     }
 };
 
@@ -93,35 +103,52 @@ function showModal(title, label, defaultValue = '') {
         const modalTitle = document.getElementById('modal-title');
         const modalLabel = document.getElementById('modal-label');
         const modalInput = document.getElementById('modal-input');
-        
+
         modalTitle.textContent = title;
         modalLabel.textContent = label;
         modalInput.value = defaultValue;
         modal.classList.add('show');
         modalInput.focus();
-        
-        state.modalResolve = resolve;
-    });
-}
 
-function closeModal(confirmed) {
-    const modal = document.getElementById('modal');
-    const modalInput = document.getElementById('modal-input');
-    const value = confirmed ? modalInput.value : null;
-    
-    modal.classList.remove('show');
-    
-    if (state.modalResolve) {
-        state.modalResolve(value);
-        state.modalResolve = null;
-    }
+        const handleConfirm = () => {
+            cleanup();
+            resolve(modalInput.value);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') handleConfirm();
+            if (e.key === 'Escape') handleCancel();
+        };
+
+        const handleBackdrop = (e) => {
+            if (e.target.id === 'modal') handleCancel();
+        };
+
+        const cleanup = () => {
+            modal.classList.remove('show');
+            document.getElementById('modal-confirm').removeEventListener('click', handleConfirm);
+            document.getElementById('modal-cancel').removeEventListener('click', handleCancel);
+            modalInput.removeEventListener('keydown', handleKeydown);
+            modal.removeEventListener('click', handleBackdrop);
+        };
+
+        document.getElementById('modal-confirm').addEventListener('click', handleConfirm);
+        document.getElementById('modal-cancel').addEventListener('click', handleCancel);
+        modalInput.addEventListener('keydown', handleKeydown);
+        modal.addEventListener('click', handleBackdrop);
+    });
 }
 
 function setTheme(theme) {
     document.body.className = `theme-${theme}`;
     state.currentTheme = theme;
     localStorage.setItem('plantain-theme', theme);
-    
+
     document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.toggle('active', option.dataset.theme === theme);
     });
@@ -133,191 +160,208 @@ function toggleThemeMenu() {
 }
 
 function closeThemeMenu() {
-    const menu = document.getElementById('theme-menu');
-    menu.classList.remove('show');
+    document.getElementById('theme-menu').classList.remove('show');
 }
 
 function updateStatus(status) {
     const wifiDot = document.getElementById('wifi-status');
     const wifiText = document.getElementById('wifi-text');
-    const btDot = document.getElementById('bluetooth-status');
-    const btText = document.getElementById('bluetooth-text');
+    const bleDot = document.getElementById('ble-status');
+    const bleText = document.getElementById('ble-text');
     const tempDot = document.getElementById('temp-status');
     const tempText = document.getElementById('temp-text');
 
-    if (status.wifi && status.wifi.connected) {
+    if (status.wifi?.connected) {
         wifiDot.className = 'status-dot active';
         wifiText.textContent = `WiFi: ${status.wifi.ssid || 'Connected'}`;
+        document.getElementById('dashboard-wifi').textContent = '✓';
     } else {
         wifiDot.className = 'status-dot';
         wifiText.textContent = 'WiFi: Disconnected';
+        document.getElementById('dashboard-wifi').textContent = '✗';
     }
 
-    if (status.bluetooth && status.bluetooth.advertising) {
-        btDot.className = 'status-dot active';
-        btText.textContent = `BLE: ${status.bluetooth.connected ? 'Connected' : 'Ready'}`;
+    if (status.bluetooth?.advertising) {
+        bleDot.className = 'status-dot active';
+        bleText.textContent = `BLE: ${status.bluetooth.connected ? 'Connected' : 'Ready'}`;
+        document.getElementById('dashboard-ble').textContent = status.bluetooth.connected ? '✓' : '◆';
     } else {
-        btDot.className = 'status-dot';
-        btText.textContent = 'BLE: Off';
+        bleDot.className = 'status-dot';
+        bleText.textContent = 'BLE: Off';
+        document.getElementById('dashboard-ble').textContent = '✗';
     }
 
-    if (status.temperature !== undefined) {
+    if (status.temperature !== undefined && status.temperature !== null) {
         tempDot.className = status.temperature > 60 ? 'status-dot warning' : 'status-dot active';
         tempText.textContent = `Temp: ${status.temperature}°C`;
+        document.getElementById('dashboard-temp').textContent = `${status.temperature}°C`;
     } else {
         tempDot.className = 'status-dot';
         tempText.textContent = 'Temp: --°C';
+        document.getElementById('dashboard-temp').textContent = '—';
     }
 }
 
-function populateConfigList(configs) {
-    const select = document.getElementById('config-select');
-    select.innerHTML = configs.map(name => 
-        `<option value="${name}">${name}</option>`
-    ).join('');
-    
-    if (configs.length > 0 && !state.currentConfig) {
-        state.currentConfig = configs[0];
-        select.value = configs[0];
-    }
-}
-
-function getMappingsFromUI() {
-    const inputs = document.querySelectorAll('#button-mapping input');
-    const mappings = [];
-    
-    for (let i = 0; i < 4; i++) {
-        const note = document.querySelector(`input[data-button="${i}"][data-field="note"]`).value;
-        const velocity = document.querySelector(`input[data-button="${i}"][data-field="velocity"]`).value;
-        mappings.push({
-            button: i,
-            note: parseInt(note),
-            velocity: parseInt(velocity)
-        });
-    }
-    
-    return mappings;
-}
-
-function setMappingsInUI(mappings) {
-    mappings.forEach(mapping => {
-        const noteInput = document.querySelector(`input[data-button="${mapping.button}"][data-field="note"]`);
-        const velocityInput = document.querySelector(`input[data-button="${mapping.button}"][data-field="velocity"]`);
-        
-        if (noteInput) {
-            noteInput.value = mapping.note;
-            updateNoteDisplay(noteInput);
-        }
-        if (velocityInput) velocityInput.value = mapping.velocity || 100;
-    });
-}
-
-function updateNoteDisplay(input) {
-    const button = input.dataset.button;
-    const displaySpan = document.getElementById(`note-display-${button}`);
-    if (displaySpan) {
-        displaySpan.textContent = midiToNoteName(parseInt(input.value));
-    }
+function updateActiveConfigDisplay() {
+    const display = document.getElementById('active-config-display');
+    display.textContent = state.loadedConfig || 'None';
 }
 
 async function loadConfigList() {
     try {
-        const configs = await API.getConfigs();
-        state.configs = configs;
-        populateConfigList(configs);
+        state.configs = await API.getConfigs();
+        renderConfigPanel();
     } catch (error) {
-        showToast('Failed to load config list', 'error');
+        showToast('Failed to load configs', 'error');
     }
 }
 
-async function handleLoad() {
-    const select = document.getElementById('config-select');
-    const filename = select.value;
-    
-    if (!filename) {
-        showToast('Select a config to load', 'error');
+function renderConfigPanel() {
+    const panel = document.getElementById('config-panel');
+    panel.innerHTML = state.configs.map(name => `
+        <div class="config-item ${state.selectedConfig === name ? 'active' : ''} ${state.loadedConfig === name ? 'loaded' : ''}"
+             role="option" aria-selected="${state.selectedConfig === name}"
+             data-config="${name}">
+            ${name}
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.config-item').forEach(item => {
+        item.addEventListener('click', () => selectConfigItem(item.dataset.config));
+    });
+
+    updateConfigButtons();
+}
+
+async function selectConfigItem(name) {
+    state.selectedConfig = name;
+    renderConfigPanel();
+    updateConfigButtons();
+
+    const result = await API.selectConfig(name);
+    if (result.ok) {
+        showToast(`Selected: ${name}`);
+        await loadConfigData(name);
+    } else {
+        showToast('Failed to select config', 'error');
+    }
+}
+
+async function loadConfigData(name) {
+    const data = await API.loadConfig(name);
+    if (data) {
+        state.loadedConfig = name;
+        state.mappings = data.mappings || [];
+        renderMappings();
+        renderConfigPanel();
+        updateActiveConfigDisplay();
+        showToast(`Loaded: ${name}`);
+    } else {
+        showToast('Failed to load config data', 'error');
+    }
+}
+
+function renderMappings() {
+    const grid = document.getElementById('button-grid');
+    const card = document.getElementById('mappings-card');
+
+    if (!state.mappings.length) {
+        card.classList.add('hidden');
         return;
     }
 
-    try {
-        const data = await API.loadConfig(filename);
-        state.currentConfig = filename;
-        state.mappings = data.mappings;
-        setMappingsInUI(data.mappings);
-        showToast(`Loaded: ${filename}`);
-    } catch (error) {
-        showToast('Failed to load config', 'error');
-    }
+    card.classList.remove('hidden');
+    grid.innerHTML = state.mappings.map(m => `
+        <div class="button-card">
+            <h3>Button ${m.button}</h3>
+            <div class="note-display">${midiToNoteName(m.note)}</div>
+            <label>Note</label>
+            <input type="number" data-button="${m.button}" data-field="note" min="0" max="127" value="${m.note}">
+            <label>Velocity</label>
+            <input type="number" data-button="${m.button}" data-field="velocity" min="0" max="127" value="${m.velocity || 100}">
+        </div>
+    `).join('');
+
+    document.querySelectorAll('#button-grid input[data-field="note"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const display = document.querySelector(`[data-button="${e.target.dataset.button}"] .note-display`);
+            if (display) display.textContent = midiToNoteName(parseInt(e.target.value));
+        });
+    });
 }
 
-async function handleSave() {
-    const select = document.getElementById('config-select');
-    const filename = select.value;
-    
-    if (!filename) {
-        showToast('Select a config to save', 'error');
-        return;
-    }
-
-    const mappings = getMappingsFromUI();
-
-    try {
-        await API.saveConfig(filename, mappings);
-        state.mappings = mappings;
-        showToast(`Saved: ${filename}`);
-    } catch (error) {
-        showToast('Failed to save config', 'error');
-    }
+function updateConfigButtons() {
+    const hasSelected = state.selectedConfig !== null;
+    document.getElementById('edit-config-btn').disabled = !hasSelected;
+    document.getElementById('delete-config-btn').disabled = !hasSelected;
 }
 
-async function handleNew() {
+async function handleNewConfig() {
     const name = await showModal('New Configuration', 'Config Name');
-    
     if (!name) return;
-    
-    if (name === 'default') {
-        showToast('Cannot use reserved name "default"', 'error');
-        return;
-    }
 
     const filename = name.endsWith('.pl_conf') ? name : `${name}.pl_conf`;
-    const mappings = getMappingsFromUI();
+    const defaultMappings = [
+        { button: 0, note: 60, velocity: 100 },
+        { button: 1, note: 62, velocity: 100 },
+        { button: 2, note: 64, velocity: 100 },
+        { button: 3, note: 67, velocity: 100 }
+    ];
 
-    try {
-        await API.saveConfig(filename, mappings);
-        state.configs.push(filename);
-        populateConfigList(state.configs);
-        document.getElementById('config-select').value = filename;
-        state.currentConfig = filename;
+    const result = await API.saveConfig(filename, defaultMappings);
+    if (result.ok) {
+        await loadConfigList();
         showToast(`Created: ${filename}`);
-    } catch (error) {
+    } else {
         showToast('Failed to create config', 'error');
     }
 }
 
-async function handleDelete() {
-    const select = document.getElementById('config-select');
-    const filename = select.value;
-    
-    if (!filename) {
+async function handleEditConfig() {
+    if (!state.loadedConfig) {
+        showToast('Load a config first', 'error');
+        return;
+    }
+
+    const mappings = [];
+    document.querySelectorAll('#button-grid input[data-field="note"]').forEach(input => {
+        const button = parseInt(input.dataset.button);
+        const note = parseInt(input.value);
+        const velocity = parseInt(document.querySelector(`input[data-button="${button}"][data-field="velocity"]`).value);
+        mappings.push({ button, note, velocity });
+    });
+
+    const result = await API.saveConfig(state.loadedConfig, mappings);
+    if (result.ok) {
+        state.mappings = mappings;
+        showToast(`Saved: ${state.loadedConfig}`);
+    } else {
+        showToast('Failed to save config', 'error');
+    }
+}
+
+async function handleDeleteConfig() {
+    if (!state.selectedConfig) {
         showToast('Select a config to delete', 'error');
         return;
     }
 
-    if (filename === 'default.pl_conf') {
-        showToast('Cannot delete default config', 'error');
-        return;
-    }
-
-    const confirm = await showModal('Delete Configuration', 'Type DELETE to confirm', '');
+    const confirm = await showModal('Delete Configuration', 'Type DELETE to confirm');
     if (confirm !== 'DELETE') return;
 
-    try {
-        await API.deleteConfig(filename);
-        state.configs = state.configs.filter(c => c !== filename);
-        populateConfigList(state.configs);
-        showToast(`Deleted: ${filename}`);
-    } catch (error) {
+    const result = await API.deleteConfig(state.selectedConfig);
+    if (result.ok) {
+        state.configs = state.configs.filter(c => c !== state.selectedConfig);
+        if (state.loadedConfig === state.selectedConfig) {
+            state.loadedConfig = null;
+            state.mappings = [];
+            document.getElementById('mappings-card').classList.add('hidden');
+            updateActiveConfigDisplay();
+        }
+        state.selectedConfig = null;
+        renderConfigPanel();
+        showToast(`Deleted config`);
+    } else {
         showToast('Failed to delete config', 'error');
     }
 }
@@ -334,44 +378,23 @@ async function updateStatusPeriodic() {
 function init() {
     const savedTheme = localStorage.getItem('plantain-theme') || 'dark';
     setTheme(savedTheme);
-    
-    document.getElementById('load-btn').addEventListener('click', handleLoad);
-    document.getElementById('save-btn').addEventListener('click', handleSave);
-    document.getElementById('new-btn').addEventListener('click', handleNew);
-    document.getElementById('delete-btn').addEventListener('click', handleDelete);
-    
-    document.getElementById('modal-cancel').addEventListener('click', () => closeModal(false));
-    document.getElementById('modal-confirm').addEventListener('click', () => closeModal(true));
-    
-    document.getElementById('modal').addEventListener('click', (e) => {
-        if (e.target.id === 'modal') closeModal(false);
-    });
-    
-    document.getElementById('modal-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') closeModal(true);
-        if (e.key === 'Escape') closeModal(false);
-    });
-    
+
     document.getElementById('theme-button').addEventListener('click', toggleThemeMenu);
-    
     document.querySelectorAll('.theme-option').forEach(option => {
         option.addEventListener('click', () => {
             setTheme(option.dataset.theme);
             closeThemeMenu();
         });
     });
-    
+
     document.addEventListener('click', (e) => {
-        const themeSwitcher = document.querySelector('.theme-switcher');
-        if (!themeSwitcher.contains(e.target)) {
-            closeThemeMenu();
-        }
+        const switcher = document.querySelector('.theme-switcher');
+        if (!switcher.contains(e.target)) closeThemeMenu();
     });
-    
-    document.querySelectorAll('input[data-field="note"]').forEach(input => {
-        updateNoteDisplay(input);
-        input.addEventListener('input', (e) => updateNoteDisplay(e.target));
-    });
+
+    document.getElementById('new-config-btn').addEventListener('click', handleNewConfig);
+    document.getElementById('edit-config-btn').addEventListener('click', handleEditConfig);
+    document.getElementById('delete-config-btn').addEventListener('click', handleDeleteConfig);
 
     loadConfigList();
     updateStatusPeriodic();
