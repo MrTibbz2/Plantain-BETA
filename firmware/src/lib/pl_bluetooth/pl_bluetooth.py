@@ -82,6 +82,7 @@ class ButtonIndex: # storage for the indexer, all the configurations of the mapp
 
     def __init__(self):
         self.__current_button_to_note_index = []
+        self.__active_config = None
 
         try:
             os.stat(self.CONFIG_DIR)
@@ -90,10 +91,17 @@ class ButtonIndex: # storage for the indexer, all the configurations of the mapp
 
         self.__ensure_default_config()
         self.select_config(self.DEFAULT_CONFIG)
-    def retrive_config(self, filename: str) -> list:
-        path = self.__validate_config_path(filename)
-        with open(path, "r") as f:
-            return json.load(f) 
+    def get_config(self, filename: str) -> list | None:
+        """Return the stored mappings for a config without activating it."""
+        try:
+            if not filename.endswith(self.CONFIG_EXT):
+                filename += self.CONFIG_EXT
+            path = self.CONFIG_DIR + "/" + filename
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            DPrint(f"Error reading config: {e}")
+            return None
     def get_configs(self) -> list:
         configs = []
         for entry in os.listdir(self.CONFIG_DIR):
@@ -137,39 +145,34 @@ class ButtonIndex: # storage for the indexer, all the configurations of the mapp
 
         return self.CONFIG_DIR + "/" + filename
 
-    def select_config(self, filename: str) -> bool: # loads the.. config???? 
+    def select_config(self, filename: str) -> bool:
+        """Set the active mapping to the given config. Returns True on success."""
         try:
             if not filename.endswith(self.CONFIG_EXT):
                 filename += self.CONFIG_EXT
-
             path = self.CONFIG_DIR + "/" + filename
-
             with open(path, "r") as f:
                 self.__current_button_to_note_index = json.load(f)
-
+            self.__active_config = filename
             return True
-
         except FileNotFoundError:
-            DPrint(f"Config file not found: {filename}")
+            DPrint(f"Config not found: {filename}")
             return False
-
         except Exception as e:
-            DPrint(f"Error loading config: {e}")
+            DPrint(f"Error selecting config: {e}")
             return False
 
-    def save_config(self, filename: str) -> bool: # shoves the config into filesystem. 
+    def save_config(self, filename: str, mappings: list = None) -> bool:
+        """Save mappings to a config file. Uses current active mappings if none provided."""
         try:
             path = self.__validate_config_path(filename)
-
+            data = mappings if mappings is not None else self.__current_button_to_note_index
             with open(path, "w") as f:
-                json.dump(self.__current_button_to_note_index, f)
-
+                json.dump(data, f)
             return True
-
         except ValueError as e:
             DPrint(f"Invalid config path: {e}")
             return False
-
         except Exception as e:
             DPrint(f"Error saving config: {e}")
             return False

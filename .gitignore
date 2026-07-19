@@ -1,1 +1,5 @@
 tools/dump/
+tools/build/
+tools/esbuild
+tools/esbuild.exe
+tools/*.tgz
