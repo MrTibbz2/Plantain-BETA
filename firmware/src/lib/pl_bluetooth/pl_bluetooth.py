@@ -89,8 +89,19 @@ class ButtonIndex: # storage for the indexer, all the configurations of the mapp
             os.mkdir(self.CONFIG_DIR)
 
         self.__ensure_default_config()
-        self.load_config(self.DEFAULT_CONFIG)
+        self.select_config(self.DEFAULT_CONFIG)
+    def retrive_config(self, filename: str) -> list:
+        path = self.__validate_config_path(filename)
+        with open(path, "r") as f:
+            return json.load(f) 
+    def get_configs(self) -> list:
+        configs = []
+        for entry in os.listdir(self.CONFIG_DIR):
+            if entry.endswith(self.CONFIG_EXT):
+                configs.append(entry[:-len(self.CONFIG_EXT)])
+        return configs 
 
+        
     def __ensure_default_config(self): # makes sure there is a default config. to make sure theres a fallback. 
         default_path = self.CONFIG_DIR + "/" + self.DEFAULT_CONFIG + self.CONFIG_EXT
 
@@ -126,7 +137,7 @@ class ButtonIndex: # storage for the indexer, all the configurations of the mapp
 
         return self.CONFIG_DIR + "/" + filename
 
-    def load_config(self, filename: str) -> bool: # loads the.. config???? 
+    def select_config(self, filename: str) -> bool: # loads the.. config???? 
         try:
             if not filename.endswith(self.CONFIG_EXT):
                 filename += self.CONFIG_EXT
