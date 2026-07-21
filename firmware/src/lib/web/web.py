@@ -1,6 +1,6 @@
 from .microdot import Microdot
 import json
-
+from..debug.debug import DPrint
 
 class Web:
     def __init__(self):
@@ -97,14 +97,14 @@ class Web:
 
     async def serve_index(self, request):
         try:
-            with open('static/index.html', 'r') as f:
+            with open('/lib/web/static/index.html', 'r') as f:
                 return f.read(), 200, {'Content-Type': 'text/html'}
         except:
             return 'Not found', 404, {'Content-Type': 'text/plain'}
 
     async def serve_static(self, request, path):
         try:
-            filepath = f'static/{path}'
+            filepath = f'/lib/web/static/{path}'
             with open(filepath, 'r') as f:
                 content = f.read()
             
@@ -122,4 +122,5 @@ class Web:
             return 'Not found', 404, {'Content-Type': 'text/plain'}
 
     async def run(self):
+        DPrint("WEB: running server on port 80")
         await self.__app.start_server(port=80)

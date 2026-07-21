@@ -8,6 +8,6 @@ if DEBUGMODE:
     DPrint("Debug mode enabled.")
     DPrint("Running application...")
 
-app = App(wifi_ssid="Arecibomessage", wifi_password="Dumb@Black&WhiteCat9")
+app = App(wifi_ssid="fedora-book", wifi_password="password")
 asyncio.run(app.run())
 

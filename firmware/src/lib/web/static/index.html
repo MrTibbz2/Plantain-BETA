@@ -306,9 +306,16 @@
             width: 280px;
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-md);
-            overflow-y: auto;
             flex-shrink: 0;
+            min-height: 0;
+        }
+
+        .sidebar .card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
         }
 
         .content {
@@ -358,9 +365,11 @@
         .config-panel {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-md);
-            max-height: 400px;
+            gap: var(--spacing-sm);
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
+            margin-bottom: var(--spacing-md);
         }
 
         .config-item {
@@ -372,6 +381,11 @@
             transition: all var(--transition);
             font-size: 0.95rem;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-sm);
+            flex-shrink: 0;
         }
 
         .config-item:hover {
@@ -390,10 +404,31 @@
             border-left: 4px solid var(--success);
         }
 
+        .config-item--default {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .config-item--default:hover {
+            border-color: transparent;
+            background: var(--bg-tertiary);
+        }
+
+        .config-item--default.active:hover {
+            background: var(--accent);
+        }
+
+        .config-lock {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
         .config-actions {
             display: flex;
             gap: var(--spacing-sm);
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
 
         .btn {
@@ -623,6 +658,126 @@
             flex: 1;
         }
 
+        .edit-modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            max-width: 560px;
+            width: 100%;
+            color: var(--text-primary);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .edit-modal-content h3 {
+            font-size: 1.2rem;
+            margin-bottom: var(--spacing-xs);
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .edit-modal-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            flex-shrink: 0;
+        }
+
+        #edit-modal-body {
+            overflow-y: auto;
+            flex: 1;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .edit-btn-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+        }
+
+        .edit-btn-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .edit-btn-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .edit-note-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 52px;
+            text-align: right;
+        }
+
+        .edit-field {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .edit-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .edit-field-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .edit-field select {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: border-color var(--transition);
+        }
+
+        .edit-field select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .velocity-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .velocity-row input[type=range] {
+            flex: 1;
+            accent-color: var(--accent);
+            cursor: pointer;
+            height: 4px;
+        }
+
+        .velocity-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 28px;
+            text-align: right;
+        }
+
         .toast {
             position: fixed;
             bottom: var(--spacing-lg);
@@ -811,6 +966,18 @@
             </div>
         </div>
     </main>
+
+    <div class="modal" id="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" aria-describedby="edit-modal-subtitle">
+        <div class="edit-modal-content">
+            <h3 id="edit-modal-title">Edit Mappings</h3>
+            <div class="edit-modal-subtitle" id="edit-modal-subtitle">Changes are saved when you click Save.</div>
+            <div id="edit-modal-body" role="list"></div>
+            <div class="modal-buttons">
+                <button class="btn" id="edit-modal-cancel">Cancel</button>
+                <button class="btn primary" id="edit-modal-save">Save</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal" id="modal">
         <div class="modal-content">

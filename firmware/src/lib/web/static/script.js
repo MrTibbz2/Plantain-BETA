@@ -14,6 +14,10 @@ function midiToNoteName(midiNumber) {
     return `${note}${octave}`;
 }
 
+function isDefault(name) {
+    return name && name.toLowerCase().replace('.pl_conf', '') === 'default';
+}
+
 const API = {
     async getConfigs() {
         try {
@@ -35,11 +39,12 @@ const API = {
             console.error('selectConfig error:', e);
             return { ok: false };
         }
+    // amazonq-ignore-next-line
     },
 
     async loadConfig(name) {
         try {
-            const res = await fetch(`/api/load/${name}`);
+            const res = await fetch(`/api/config/${name}`);
             if (!res.ok) throw new Error('Config not found');
             return await res.json();
         } catch (e) {
@@ -218,16 +223,24 @@ async function loadConfigList() {
 
 function renderConfigPanel() {
     const panel = document.getElementById('config-panel');
-    panel.innerHTML = state.configs.map(name => `
-        <div class="config-item ${state.selectedConfig === name ? 'active' : ''} ${state.loadedConfig === name ? 'loaded' : ''}"
-             role="option" aria-selected="${state.selectedConfig === name}"
+    panel.innerHTML = state.configs.map(name => {
+        const def = isDefault(name);
+        return `
+        <div class="config-item ${state.selectedConfig === name ? 'active' : ''} ${state.loadedConfig === name ? 'loaded' : ''} ${def ? 'config-item--default' : ''}"
+             role="option" aria-selected="${state.selectedConfig === name}" tabindex="0"
+             ${def ? `aria-label="${name} (read-only)"` : ''}
              data-config="${name}">
-            ${name}
-        </div>
-    `).join('');
+            <span>${name}</span>
+            ${def ? '<span class="config-lock" aria-hidden="true">🔒</span>' : ''}
+        </div>`;
+    }).join('');
 
     document.querySelectorAll('.config-item').forEach(item => {
-        item.addEventListener('click', () => selectConfigItem(item.dataset.config));
+        const handler = () => selectConfigItem(item.dataset.config);
+        item.addEventListener('click', handler);
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+        });
     });
 
     updateConfigButtons();
@@ -251,7 +264,7 @@ async function loadConfigData(name) {
     const data = await API.loadConfig(name);
     if (data) {
         state.loadedConfig = name;
-        state.mappings = data.mappings || [];
+        state.mappings = Array.isArray(data) ? data : (data.mappings || []);
         renderMappings();
         renderConfigPanel();
         updateActiveConfigDisplay();
@@ -292,8 +305,13 @@ function renderMappings() {
 
 function updateConfigButtons() {
     const hasSelected = state.selectedConfig !== null;
-    document.getElementById('edit-config-btn').disabled = !hasSelected;
-    document.getElementById('delete-config-btn').disabled = !hasSelected;
+    const def = isDefault(state.selectedConfig);
+    const editBtn = document.getElementById('edit-config-btn');
+    const deleteBtn = document.getElementById('delete-config-btn');
+    editBtn.disabled = !hasSelected || def;
+    editBtn.title = def ? 'Cannot edit Default config' : '';
+    deleteBtn.disabled = !hasSelected || def;
+    deleteBtn.title = def ? 'Cannot delete Default config' : '';
 }
 
 async function handleNewConfig() {
@@ -308,8 +326,12 @@ async function handleNewConfig() {
         { button: 3, note: 67, velocity: 100 }
     ];
 
-    const result = await API.saveConfig(filename, defaultMappings);
+    const mappings = await showEditModal(defaultMappings, filename);
+    if (!mappings) return;
+
+    const result = await API.saveConfig(filename, mappings);
     if (result.ok) {
+        // amazonq-ignore-next-line
         await loadConfigList();
         showToast(`Created: ${filename}`);
     } else {
@@ -317,23 +339,124 @@ async function handleNewConfig() {
     }
 }
 
+function buildNoteOptions(selected) {
+    return Array.from({ length: 128 }, (_, i) => {
+        const name = midiToNoteName(i);
+        return `<option value="${i}" ${i === selected ? 'selected' : ''}>${name} (${i})</option>`;
+    }).join('');
+}
+
+function showEditModal(mappings, configName) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('edit-modal');
+        const body = document.getElementById('edit-modal-body');
+        document.getElementById('edit-modal-title').textContent = `Edit: ${configName.replace(/[<>"'&]/g, '')}`;
+
+        body.innerHTML = mappings.map(m => `
+            <div class="edit-btn-card" role="listitem" data-button="${m.button}">
+                <div class="edit-btn-header">
+                    <span class="edit-btn-label">Button ${m.button}</span>
+                    <span class="edit-note-badge" id="badge-${m.button}" aria-live="polite">${midiToNoteName(m.note)}</span>
+                </div>
+                <div class="edit-field">
+                    <label class="edit-field-label" for="note-sel-${m.button}">Note</label>
+                    <select id="note-sel-${m.button}" data-button="${m.button}" data-field="note"
+                            aria-label="Button ${m.button} note">
+                        ${buildNoteOptions(m.note)}
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <div class="edit-field-label">
+                        <label for="vel-slider-${m.button}">Velocity</label>
+                        <span class="velocity-value" id="vel-${m.button}" aria-live="polite">${m.velocity || 100}</span>
+                    </div>
+                    <div class="velocity-row">
+                        <input type="range" id="vel-slider-${m.button}" min="0" max="127" value="${m.velocity || 100}"
+                               data-button="${m.button}" data-field="velocity"
+                               aria-label="Button ${m.button} velocity"
+                               aria-valuemin="0" aria-valuemax="127" aria-valuenow="${m.velocity || 100}">
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        body.querySelectorAll('select[data-field="note"]').forEach(sel => {
+            sel.addEventListener('change', () => {
+                document.getElementById(`badge-${sel.dataset.button}`).textContent = midiToNoteName(parseInt(sel.value));
+            });
+        });
+
+        body.querySelectorAll('input[data-field="velocity"]').forEach(slider => {
+            slider.addEventListener('input', () => {
+                document.getElementById(`vel-${slider.dataset.button}`).textContent = slider.value;
+                slider.setAttribute('aria-valuenow', slider.value);
+            });
+        });
+
+        modal.classList.add('show');
+        const firstFocusable = modal.querySelector('select, input, button');
+        if (firstFocusable) firstFocusable.focus();
+
+        const getFocusable = () => [...modal.querySelectorAll('select, input[type=range], button')];
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') { handleCancel(); return; }
+            if (e.key === 'Tab') {
+                const focusable = getFocusable();
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+        };
+
+        const handleSave = () => {
+            const updated = mappings.map(m => ({
+                button: m.button,
+                note: parseInt(body.querySelector(`select[data-button="${m.button}"][data-field="note"]`).value),
+                velocity: parseInt(body.querySelector(`input[data-button="${m.button}"][data-field="velocity"]`).value)
+            }));
+            cleanup();
+            resolve(updated);
+        };
+
+        const handleCancel = () => { cleanup(); resolve(null); };
+
+        const cleanup = () => {
+            modal.classList.remove('show');
+            modal.removeEventListener('keydown', handleKeydown);
+            document.getElementById('edit-modal-save').removeEventListener('click', handleSave);
+            document.getElementById('edit-modal-cancel').removeEventListener('click', handleCancel);
+        };
+
+        modal.addEventListener('keydown', handleKeydown);
+        document.getElementById('edit-modal-save').addEventListener('click', handleSave);
+        document.getElementById('edit-modal-cancel').addEventListener('click', handleCancel);
+    });
+}
+
 async function handleEditConfig() {
-    if (!state.loadedConfig) {
-        showToast('Load a config first', 'error');
+    if (!state.selectedConfig) {
+        showToast('Select a config first', 'error');
         return;
     }
+    if (isDefault(state.selectedConfig)) {
+        showToast('Cannot edit Default config', 'error');
+        return;
+    }
+    await loadConfigData(state.selectedConfig);
+    if (!state.loadedConfig) return;
 
-    const mappings = [];
-    document.querySelectorAll('#button-grid input[data-field="note"]').forEach(input => {
-        const button = parseInt(input.dataset.button);
-        const note = parseInt(input.value);
-        const velocity = parseInt(document.querySelector(`input[data-button="${button}"][data-field="velocity"]`).value);
-        mappings.push({ button, note, velocity });
-    });
+    const mappings = await showEditModal(state.mappings, state.loadedConfig);
+    if (!mappings) return;
 
     const result = await API.saveConfig(state.loadedConfig, mappings);
     if (result.ok) {
         state.mappings = mappings;
+        renderMappings();
         showToast(`Saved: ${state.loadedConfig}`);
     } else {
         showToast('Failed to save config', 'error');
@@ -343,6 +466,10 @@ async function handleEditConfig() {
 async function handleDeleteConfig() {
     if (!state.selectedConfig) {
         showToast('Select a config to delete', 'error');
+        return;
+    }
+    if (isDefault(state.selectedConfig)) {
+        showToast('Cannot delete Default config', 'error');
         return;
     }
 
